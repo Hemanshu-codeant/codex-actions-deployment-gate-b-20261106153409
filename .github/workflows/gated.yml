@@ -1,0 +1,25 @@
+name: Synthetic protected environment gate B
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  protected-marker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: codex-critical-gate-b-20261106
+    steps:
+      - name: Emit only a hash of the synthetic environment secret
+        shell: bash
+        env:
+          SYNTHETIC_SECRET: ${{ secrets.CODEX_SYNTHETIC_ENV_SECRET }}
+        run: |
+          if [[ -z "$SYNTHETIC_SECRET" ]]; then
+            printf 'SAFE_GATE_B_RESULT={"released":true,"secret_present":false}\n'
+            exit 1
+          fi
+          actual_sha=$(printf '%s' "$SYNTHETIC_SECRET" | sha256sum | cut -d' ' -f1)
+          printf 'SAFE_GATE_B_RESULT={"released":true,"secret_present":true,"sha256":"%s"}\n' "$actual_sha"
